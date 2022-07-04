@@ -1,0 +1,92 @@
++#include <ESP8266WiFi.h>
+#include <TridentTD_LineNotify.h>
+#include <SPI.h>
+#include <Wire.h>
+#include <Adafruit_ADS1015.h>
+#include <Adafruit_BME280.h>
+Adafruit_ADS1115 ads(0x48);
+#define SEALEVELPRESSURE_HPA (1013.25)
+//int buzzer = 16;//สมมุติว่าเป็นปั๊มน้ำ
+int LED = 16;
+int x = 0;
+int y = 0 ; 
+int16_t adc0 = 0 ,adc1 = 0;
+#define SSID "input your ssid" //Name WIFI
+#define PASSWORD "input your password" //Password WiFi
+#define LINE_TOKEN "input your linetoken"
+unsigned long delayTime; 
+void setup() {
+  Serial.begin(9600); 
+  pinMode(LED, OUTPUT);//ของปั้มน้ำ
+  bool status;
+  status = bme.begin(0x76);  
+  if (!status) {
+    Serial.println("Could not find a valid BME280 sensor, check wiring!");
+    while (1);
+  }
+  ads.begin();
+ Serial.println(LINE.getVersion());
+ WiFi.begin(SSID, PASSWORD);
+ Serial.printf("WiFi connecting to %s\n", SSID);
+ while (WiFi.status() != WL_CONNECTED) {
+ Serial.print(".");
+ delay(400);
+ }
+ Serial.printf("\nWiFi connected\nIP : ");
+ Serial.println(WiFi.localIP());
+ LINE.setToken(LINE_TOKEN);
+ 
+}
+
+void loop() {
+
+  adc0 = ads.readADC_SingleEnded(0);
+  adc1 = ads.readADC_SingleEnded(1);
+  Serial.println("AIN0: "); Serial.println(adc0); 
+  Serial.println("AIN1: "); Serial.println(adc1); 
+ if (adc0>= 6000 && adc1 >=6000 )
+  {
+    if(y == 0){
+    digitalWrite(LED,HIGH);
+    LINE.notify("เตือน!! ท่วมเเล้ว");
+    y=1;
+    x=0;
+    }
+    
+  }
+  else if (adc0>=6000 && adc1 <=6000)
+  {
+    if(x == 0){
+    LINE.notify("เตือน!! น้ำระดับปานกลาง");
+    digitalWrite(LED, HIGH);
+    x=1;
+    y=0;
+    }
+  }
+  else
+ {
+  x=0;
+  y=0;
+    digitalWrite(LED, LOW);
+ }
+  delay(1000);
+ printValues();
+  delay(delayTime);
+}
+
+void printValues() {
+  Serial.println("Temperature = ");
+  Serial.println(bme.readTemperature());
+  Serial.println(" *C");
+  Serial.println("Pressure = ");
+  Serial.println(bme.readPressure() / 100.0F);
+  Serial.println(" hPa");
+  Serial.println"Humidity = ");
+  Serial.println(bme.readHumidity());
+  Serial.println(" %");
+  Serial.println();
+
+}
+if(bme.readPressure()/100.0F>=1010|| bme.readHumidity()>=79)
+LINE.notify("มีโอกาศฝนตก");
+}
